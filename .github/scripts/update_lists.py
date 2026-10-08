@@ -57,6 +57,7 @@ LISTS = [
     {
         "file": "NEW_GRAD.md",
         "title": "New Grad & Entry-Level Jobs",
+        "intern": False,
         "queries": [{"job_type": "Fresher"}],
     },
     {
@@ -132,19 +133,43 @@ def location(job):
     return places[0] + (f" +{len(places) - 1}" if len(places) > 1 else "")
 
 
-def pay(job):
+HOURS_PER_YEAR = 2080
+INTERN_HOURLY = (12, 150)        # plausible intern pay, $/hr
+YEARLY = (25_000, 450_000)       # plausible full-time pay, $/yr
+WIDE_RANGE = 2.5                 # max/min beyond this is shown as "from $min"
+
+
+def pay(job, intern):
+    """Interns in $/hr (employers often post yearly equivalents), full-time in $k/yr.
+    Values outside a plausible band are left blank rather than shown wrong."""
     rng = job.get("salary_range") or {}
     try:
         low = float(rng.get("min") or 0)
         high = float(rng.get("max") or 0)
     except (TypeError, ValueError):
         return ""
-    value = low or high
-    if not value:
+    low, high = (low or high), (high or low)
+    if not low:
         return ""
-    if value < 500:  # hourly
-        return f"${value:.0f}/hr" if not high or high == low else f"${low:.0f}–{high:.0f}/hr"
-    return f"${value / 1000:.0f}k" if not high or high == low else f"${low / 1000:.0f}k–{high / 1000:.0f}k"
+    if intern:
+        if low >= 500:  # yearly figure
+            low, high = low / HOURS_PER_YEAR, high / HOURS_PER_YEAR
+        lo_ok, hi_ok = INTERN_HOURLY
+        unit, fmt = "/hr", (lambda v: f"${v:.0f}")
+    else:
+        if low < 500:  # hourly figure
+            low, high = low * HOURS_PER_YEAR, high * HOURS_PER_YEAR
+        lo_ok, hi_ok = YEARLY
+        unit, fmt = "", (lambda v: f"${v / 1000:.0f}k")
+    if not (lo_ok <= low <= hi_ok):
+        return ""
+    if high > hi_ok or high < low:
+        high = low
+    if high > WIDE_RANGE * low:
+        return f"from {fmt(low)}{unit}"
+    if fmt(high) == fmt(low):
+        return f"{fmt(low)}{unit}"
+    return f"{fmt(low)}–{fmt(high)[1:]}{unit}"
 
 
 def posted_at(job):
@@ -167,23 +192,24 @@ def apply_link(job):
     return link if link.startswith(("http://", "https://")) else ""
 
 
-def row(job, now):
+def row(job, now, intern):
     link = apply_link(job)
     apply = f'<a href="{link}"><strong>Apply</strong></a>' if link else ""
-    return (f"| **{clean(company_name(job))}** | {position(job)} | {location(job)} | {pay(job)} | "
+    return (f"| **{clean(company_name(job))}** | {position(job)} | {location(job)} | {pay(job, intern)} | "
             f"{age(job, now)} | {apply} |")
 
 
 HEADER = "| Company | Role | Location | Pay | Posted | Apply |\n|---|---|---|---|---|---|"
 
 
-def table(jobs, now):
+def table(jobs, now, intern):
     big = [j for j in jobs if BIG_TECH_RE.match(company_name(j))]
     rest = [j for j in jobs if not BIG_TECH_RE.match(company_name(j))]
-    parts = []
+    parts = [f"Jump to: [Big Tech](#big-tech) ({len(big)}) · [All other companies](#all-other-companies) ({len(rest)})", ""]
     if big:
-        parts += ["### Big Tech", "", HEADER, *(row(j, now) for j in big), ""]
-    parts += ["### All other companies", "", HEADER, *(row(j, now) for j in rest), ""]
+        parts += ["### Big Tech", "", HEADER, *(row(j, now, intern) for j in big), ""]
+    parts += ["### All other companies", "", HEADER, *(row(j, now, intern) for j in rest), ""]
+    parts += ["[Back to top](#)", ""]
     return "\n".join(parts)
 
 
@@ -220,7 +246,7 @@ def main():
     for spec in LISTS:
         jobs = collect(spec)
         counts[spec["file"]] = len(jobs)
-        bodies[spec["file"]] = table(jobs, now)
+        bodies[spec["file"]] = table(jobs, now, spec.get("intern", True))
         print(f"{spec['file']}: {len(jobs)} jobs")
     if args.check:
         return 0

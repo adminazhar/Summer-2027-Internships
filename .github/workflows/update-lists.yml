@@ -2,7 +2,7 @@ name: Update job lists
 
 on:
   schedule:
-    - cron: "30 13 * * *"   # daily, 13:30 UTC (morning in the US)
+    - cron: "17 */4 * * *"   # every 4 hours (minute 17 avoids the top-of-hour Actions rush)
   workflow_dispatch:
 
 permissions:

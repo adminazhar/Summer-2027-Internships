@@ -1,0 +1,46 @@
+name: Add a role
+description: Share an open internship or new grad role at a US company.
+title: "New role: <company> - <role>"
+labels: ["new role"]
+body:
+  - type: input
+    id: company
+    attributes:
+      label: Company
+    validations:
+      required: true
+  - type: input
+    id: role
+    attributes:
+      label: Role title
+      placeholder: Software Engineering Intern, Summer 2027
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      placeholder: Seattle, WA / Remote
+    validations:
+      required: true
+  - type: input
+    id: link
+    attributes:
+      label: Link to the posting
+      description: The employer's own careers page or ATS link (Greenhouse, Lever, Workday, Ashby…), not a job board.
+    validations:
+      required: true
+  - type: input
+    id: pay
+    attributes:
+      label: Pay (optional)
+      placeholder: $45/hr
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Internship
+        - New grad / entry-level
+    validations:
+      required: true

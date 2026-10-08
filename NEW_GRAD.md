@@ -1,6 +1,6 @@
 # New Grad & Entry-Level Jobs (USA)
 
-Full-time roles for new graduates and early-career candidates across software, engineering, data and business. Refreshed daily, newest first.
+Full-time roles for new graduates and early-career candidates across software, engineering, data and business. Refreshed every 4 hours, newest first.
 
 **Lists:**
 [Software & Data Internships](README.md) (<!-- COUNT:README -->1,220<!-- /COUNT -->) ·

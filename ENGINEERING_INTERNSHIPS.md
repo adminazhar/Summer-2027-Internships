@@ -1,6 +1,6 @@
 # Hardware & Engineering Internships (USA)
 
-Mechanical, electrical, aerospace, manufacturing and other engineering internships at US companies. Refreshed daily, newest first.
+Mechanical, electrical, aerospace, manufacturing and other engineering internships at US companies. Refreshed every 4 hours, newest first.
 
 **Lists:**
 [Software & Data Internships](README.md) (<!-- COUNT:README -->1,220<!-- /COUNT -->) ·

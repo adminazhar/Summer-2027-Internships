@@ -1,0 +1,27 @@
+name: Report a closed role or a mistake
+description: A listed role has closed, or its details are wrong.
+title: "Fix: <company> - <role>"
+labels: ["fix"]
+body:
+  - type: input
+    id: role
+    attributes:
+      label: Company and role as listed
+    validations:
+      required: true
+  - type: dropdown
+    id: problem
+    attributes:
+      label: What's wrong?
+      options:
+        - The role has closed
+        - The apply link is broken
+        - Wrong location or pay
+        - Not a US role
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details (optional)

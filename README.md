@@ -1,6 +1,6 @@
 # Summer 2027 Tech Internships & New Grad Jobs (USA)
 
-Open software, data and AI internships at US companies for students graduating in 2027 and 2028, plus new grad and entry-level roles. The list refreshes every day: closed postings drop off and new ones appear at the top.
+Open software, data and AI internships at US companies for students graduating in 2027 and 2028, plus new grad and entry-level roles. The list refreshes every 4 hours: closed postings drop off and new ones appear at the top.
 
 **Lists:**
 [Software & Data Internships](README.md) (<!-- COUNT:README -->1,220<!-- /COUNT -->) ·
@@ -10,9 +10,9 @@ Open software, data and AI internships at US companies for students graduating i
 
 Last updated: <!-- UPDATED -->Oct 8, 2026<!-- /UPDATED --> · Search and filter every role on **[TalentdPro](https://www.talentdpro.com/us/entry-level-jobs?utm_source=github&utm_medium=readme&utm_campaign=us-internships)**.
 
-**How to use it:** roles are sorted newest first, so the top of each table is what opened most recently. Apply links go straight to the employer's own posting. Pay is what the employer listed, hourly or yearly, and is blank when they didn't say.
+**How to use it:** roles are sorted newest first, so the top of each table is what opened most recently. Apply links go straight to the employer's own posting. Internship pay is shown per hour and full-time pay per year, converted from what the employer listed; it's blank when they didn't say or the figure doesn't look right.
 
-Spotted a closed role or a wrong detail? [Open an issue](../../issues) and it will be fixed in the next refresh.
+Know of a role that's missing, or one that has closed? [Add a role](../../issues/new?template=new_role.yml) or [report a fix](../../issues/new?template=fix_role.yml); see [CONTRIBUTING](CONTRIBUTING.md).
 
 ## Software & Data Internships
 
