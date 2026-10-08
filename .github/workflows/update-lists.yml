@@ -1,0 +1,39 @@
+name: Update job lists
+
+on:
+  schedule:
+    - cron: "30 13 * * *"   # daily, 13:30 UTC (morning in the US)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-lists
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Rebuild the tables
+        run: python .github/scripts/update_lists.py
+
+      - name: Commit if anything changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md NEW_GRAD.md ENGINEERING_INTERNSHIPS.md BUSINESS_INTERNSHIPS.md
+          if git diff --staged --quiet; then
+            echo "No changes."
+          else
+            git commit -m "Update job lists ($(date -u +%Y-%m-%d))"
+            git push
+          fi
