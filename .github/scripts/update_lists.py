@@ -22,16 +22,48 @@ ROOT = Path(__file__).resolve().parents[2]
 PER_PAGE = 200
 USER_AGENT = "us-internships-list/1.0 (+https://github.com/adminazhar)"
 
-# Companies grouped under "Big Tech" at the top of each list. Matched on the company name.
-BIG_TECH = [
+# Rows are grouped like the big SWE lists: FAANG+, then quant and trading firms, then everyone else.
+# Matched on the start of the company name ("Amazon Web Services" -> Amazon).
+FAANG_PLUS = [
     "Google", "Alphabet", "Apple", "Meta", "Amazon", "AWS", "Microsoft", "Netflix", "NVIDIA", "Tesla",
-    "Uber", "Airbnb", "Stripe", "Salesforce", "Adobe", "Oracle", "LinkedIn", "Snap", "Pinterest",
-    "Databricks", "OpenAI", "Anthropic", "Palantir", "Spotify", "Intel", "AMD", "Qualcomm", "IBM",
-    "Cisco", "Bloomberg", "Coinbase", "Robinhood", "DoorDash", "Lyft", "Shopify", "Atlassian",
-    "Dropbox", "Reddit", "Roblox", "ServiceNow", "Snowflake", "Workday", "Intuit", "PayPal",
-    "Jane Street", "Citadel", "Two Sigma", "Hudson River Trading", "Jump Trading", "DE Shaw",
+    "SpaceX", "Uber", "Airbnb", "Stripe", "Salesforce", "Adobe", "Oracle", "LinkedIn", "Snap", "Pinterest",
+    "Databricks", "OpenAI", "Anthropic", "Scale AI", "Palantir", "Spotify", "Intel", "AMD", "Qualcomm", "IBM",
+    "Cisco", "Bloomberg", "Coinbase", "Robinhood", "DoorDash", "Lyft", "Instacart", "Shopify", "Atlassian",
+    "Dropbox", "Reddit", "Roblox", "ServiceNow", "Snowflake", "Workday", "Intuit", "PayPal", "TikTok",
+    "ByteDance", "Datadog", "Cloudflare", "MongoDB", "Figma", "Waymo", "Twilio", "HubSpot", "Broadcom",
+    "Samsung", "Sony", "Rivian", "Lucid", "Zillow", "Expedia", "eBay",
 ]
-BIG_TECH_RE = re.compile(r"^(?:" + "|".join(re.escape(n) for n in BIG_TECH) + r")\b", re.IGNORECASE)
+QUANT = [
+    "Jane Street", "Citadel", "Two Sigma", "Hudson River Trading", "HRT", "Jump Trading", "D. E. Shaw",
+    "D.E. Shaw", "DE Shaw", "Susquehanna", "SIG", "Optiver", "IMC", "Akuna", "Five Rings", "Tower Research",
+    "Virtu", "DRW", "Old Mission", "Point72", "Millennium", "Bridgewater", "Renaissance", "Radix", "Belvedere",
+    "Wolverine", "Peak6", "XTX", "Squarepoint", "AQR", "Balyasny", "Arrowstreet", "Voleon", "Headlands",
+    "Flow Traders", "Chicago Trading Company", "Geneva Trading", "Vatic", "Hap Capital", "Maven Securities",
+]
+
+
+def _names_re(names):
+    return re.compile(r"^(?:" + "|".join(re.escape(n) for n in names) + r")\b", re.IGNORECASE)
+
+
+FAANG_RE, QUANT_RE = _names_re(FAANG_PLUS), _names_re(QUANT)
+# Source data sometimes has "Spacex" or "Hrt"; show the usual spelling when the whole name matches.
+KNOWN_SPELLING = {n.lower(): n for n in FAANG_PLUS + QUANT}
+GROUPS = [  # (heading, anchor) — GitHub anchors drop "+" and turn "&" into "--"
+    ("FAANG+", "faang"),
+    ("Quant & Trading", "quant--trading"),
+    ("Other", "other"),
+]
+
+
+def group_of(job):
+    name = company_name(job)
+    if QUANT_RE.match(name):
+        return "Quant & Trading"
+    if FAANG_RE.match(name):
+        return "FAANG+"
+    return "Other"
+
 
 STATE_ABBR = {
     "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA", "colorado": "CO",
@@ -192,24 +224,51 @@ def apply_link(job):
     return link if link.startswith(("http://", "https://")) else ""
 
 
-def row(job, now, intern):
+TRACKING = "utm_source=github&utm_medium=list&utm_campaign=us-internships"
+
+
+def details_link(job):
+    slug = (job.get("slug") or "").strip()
+    return f"{SITE}/us/jobs/{urllib.parse.quote(slug)}?{TRACKING}" if slug else ""
+
+
+def buttons(job):
+    """Apply goes straight to the employer; Details opens the role on TalentdPro."""
+    parts = []
     link = apply_link(job)
-    apply = f'<a href="{link}"><strong>Apply</strong></a>' if link else ""
-    return (f"| **{clean(company_name(job))}** | {position(job)} | {location(job)} | {pay(job, intern)} | "
-            f"{age(job, now)} | {apply} |")
+    if link:
+        parts.append(f'<a href="{link}"><img src="assets/apply.svg" alt="Apply" width="64"></a>')
+    details = details_link(job)
+    if details:
+        parts.append(f'<a href="{details}"><img src="assets/details.svg" alt="Details" width="64"></a>')
+    return " ".join(parts)
+
+
+def row(job, now, intern):
+    name = company_name(job)
+    name = KNOWN_SPELLING.get(name.lower(), name)
+    return (f"| **{clean(name)}** | {position(job)} | {location(job)} | {pay(job, intern)} | "
+            f"{age(job, now)} | {buttons(job)} |")
 
 
 HEADER = "| Company | Role | Location | Pay | Posted | Apply |\n|---|---|---|---|---|---|"
 
 
+def grouped(jobs):
+    out = {heading: [] for heading, _ in GROUPS}
+    for job in jobs:
+        out[group_of(job)].append(job)
+    return out
+
+
 def table(jobs, now, intern):
-    big = [j for j in jobs if BIG_TECH_RE.match(company_name(j))]
-    rest = [j for j in jobs if not BIG_TECH_RE.match(company_name(j))]
-    parts = [f"Jump to: [Big Tech](#big-tech) ({len(big)}) · [All other companies](#all-other-companies) ({len(rest)})", ""]
-    if big:
-        parts += ["### Big Tech", "", HEADER, *(row(j, now, intern) for j in big), ""]
-    parts += ["### All other companies", "", HEADER, *(row(j, now, intern) for j in rest), ""]
-    parts += ["[Back to top](#)", ""]
+    parts = []
+    for heading, anchor in GROUPS:
+        rows = grouped(jobs)[heading]
+        if not rows:
+            continue
+        parts += [f"### {heading}", "", HEADER, *(row(j, now, intern) for j in rows), "",
+                  "[Back to top](#)", ""]
     return "\n".join(parts)
 
 
@@ -233,8 +292,34 @@ def replace_table(path, body):
     return pattern.sub(lambda _: f"{START}\n{body}\n{END}", text)
 
 
-def set_count(text, key, value):
-    return re.sub(rf"(<!-- COUNT:{key} -->)[\d,]*(<!-- /COUNT -->)", rf"\g<1>{value:,}\g<2>", text)
+SUMMARY_START, SUMMARY_END = "<!-- SUMMARY_START -->", "<!-- SUMMARY_END -->"
+REPO = "adminazhar/Summer-2027-Internships"
+
+
+def badge(label, message, color):
+    q = urllib.parse.quote
+    return f"![{label}](https://img.shields.io/badge/{q(label)}-{q(message.replace('-', '--'))}-{color})"
+
+
+def summary(counts, groups, now):
+    total = sum(counts.values())
+    lines = [
+        " ".join([
+            badge("open roles", f"{total:,}", "2ea44f"),
+            badge("refreshed", "every 4 hours", "0969da"),
+            badge("updated", f"{now:%b %-d, %Y}", "6e7781"),
+            f"![GitHub stars](https://img.shields.io/github/stars/{REPO}?style=social)",
+        ]),
+        "",
+    ]
+    for spec in LISTS:
+        file = spec["file"]
+        link = "README.md" if file == "README.md" else file
+        g = groups[file]
+        jumps = " · ".join(f"[{h}]({link}#{a}) ({len(g[h])})" for h, a in GROUPS if g[h])
+        lines.append(f"- **[{spec['title']}]({link})**: **{counts[file]:,}** open ({jumps})")
+    lines += ["", "⭐ **Star the repo** to keep it one click away. New roles land every 4 hours."]
+    return "\n".join(lines)
 
 
 def main():
@@ -242,10 +327,11 @@ def main():
     parser.add_argument("--check", action="store_true", help="print counts, write nothing")
     args = parser.parse_args()
     now = datetime.now(timezone.utc)
-    counts, bodies = {}, {}
+    counts, bodies, groups = {}, {}, {}
     for spec in LISTS:
         jobs = collect(spec)
         counts[spec["file"]] = len(jobs)
+        groups[spec["file"]] = grouped(jobs)
         bodies[spec["file"]] = table(jobs, now, spec.get("intern", True))
         print(f"{spec['file']}: {len(jobs)} jobs")
     if args.check:
@@ -256,9 +342,9 @@ def main():
     for spec in LISTS:
         path = ROOT / spec["file"]
         text = replace_table(path, bodies[spec["file"]])
-        for file, n in counts.items():
-            text = set_count(text, file.removesuffix(".md"), n)
-        text = re.sub(r"(<!-- UPDATED -->).*?(<!-- /UPDATED -->)", rf"\g<1>{now:%b %-d, %Y}\g<2>", text)
+        block = summary(counts, groups, now)
+        text = re.sub(re.escape(SUMMARY_START) + r".*?" + re.escape(SUMMARY_END),
+                      lambda _: f"{SUMMARY_START}\n{block}\n{SUMMARY_END}", text, flags=re.DOTALL)
         path.write_text(text, encoding="utf-8")
     return 0
 
