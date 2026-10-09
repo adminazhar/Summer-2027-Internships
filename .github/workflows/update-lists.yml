@@ -28,8 +28,8 @@ jobs:
 
       - name: Commit if anything changed
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "Azhar Khan"
+          git config user.email "admin@azhark.com"
           git add README.md NEW_GRAD.md ENGINEERING_INTERNSHIPS.md BUSINESS_INTERNSHIPS.md
           if git diff --staged --quiet; then
             echo "No changes."
