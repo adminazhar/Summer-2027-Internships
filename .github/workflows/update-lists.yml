@@ -1,8 +1,8 @@
 name: Update job lists
 
+# The 4-hourly refresh runs from cron on server 77 (/usr/local/bin/summer-2027-internships-update),
+# because GitHub kept dropping scheduled runs. This workflow is only the manual "Run workflow" button.
 on:
-  schedule:
-    - cron: "17 */4 * * *"   # every 4 hours (minute 17 avoids the top-of-hour Actions rush)
   workflow_dispatch:
 
 permissions:
